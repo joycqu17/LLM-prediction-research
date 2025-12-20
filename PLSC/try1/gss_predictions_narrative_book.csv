@@ -1,0 +1,101 @@
+pred_polview,narrative,age,educ,race,sex,relig,region,marital,RACE,SEX,RELIG,REGION,MARITAL
+4,"At 41, he is a office worker who grew up in the Midwest. He does not identify strongly with any religion. He is married and lives in the Midwest.",41.0,14,1,1,4,2,1.0,White,Male,None,Midwest,Married
+2,"At 65, she is a office worker who grew up in the Midwest. She does not identify strongly with any religion. She is divorced and lives in the Midwest.",65.0,14,1,2,4,2,3.0,White,Female,None,Midwest,Divorced
+2,"At 64, she is a office worker who grew up in the Northeast. She does not identify strongly with any religion. She lives in the Northeast, enjoying a quiet life.",64.0,12,1,2,4,1,5.0,White,Female,None,Northeast,Never married
+4,"At 66, she is a office worker who grew up in the West. She identifies as catholic. She is married and lives in the West.",66.0,14,1,2,2,4,1.0,White,Female,Catholic,West,Married
+2,"At 58, she is a teacher who grew up in the West. She identifies as buddhism. She lives in the West, enjoying a quiet life.",58.0,17,3,2,6,4,5.0,Other,Female,Buddhism,West,Never married
+6,"At 67, he is a office worker who grew up in the Midwest. He identifies as protestant. He is married and lives in the Midwest.",67.0,14,1,1,1,2,1.0,White,Male,Protestant,Midwest,Married
+5,"At 69, she is a teacher who grew up in the South. She identifies as protestant. She is married and lives in the South.",69.0,16,1,2,1,3,1.0,White,Female,Protestant,South,Married
+4,"At 63, she is a office worker who grew up in the Midwest. She identifies as protestant. She lives in the Midwest, enjoying a quiet life.",63.0,12,1,2,1,2,5.0,White,Female,Protestant,Midwest,Never married
+2,"At 30, he is a teacher who grew up in the West. He does not identify strongly with any religion. He lives in the West, enjoying a busy life.",30.0,20,3,1,4,4,5.0,Other,Male,None,West,Never married
+4,"At 44, he is a teacher who grew up in the West. He identifies as catholic. He is married and lives in the West.",44.0,19,1,1,2,4,1.0,White,Male,Catholic,West,Married
+2,"At 46, she is a office worker who grew up in the West. She does not identify strongly with any religion. She is divorced and lives in the West.",46.0,14,1,2,4,4,3.0,White,Female,None,West,Divorced
+5,"At 24, he is a office worker who grew up in the South. He identifies as catholic. He lives in the South, enjoying a busy life.",24.0,14,1,1,2,3,5.0,White,Male,Catholic,South,Never married
+5,"At 64, he is a office worker who grew up in the Midwest. He identifies as protestant. He is divorced and lives in the Midwest.",64.0,15,3,1,1,2,3.0,Other,Male,Protestant,Midwest,Divorced
+6,"At 60, she is a office worker who grew up in the South. She identifies as protestant. She is divorced and lives in the South.",60.0,12,1,2,1,3,3.0,White,Female,Protestant,South,Divorced
+6,"At 24, he is a office worker who grew up in the West. He identifies as protestant. He is married and lives in the West.",24.0,14,1,1,1,4,1.0,White,Male,Protestant,West,Married
+3,"At 46, he is a blue-collar worker who grew up in the West. He does not identify strongly with any religion. He lives in the West, enjoying a quiet life.",46.0,9,3,1,4,4,5.0,Other,Male,None,West,Never married
+6,"At 25, he is a office worker who grew up in the South. He identifies as protestant. He lives in the South, enjoying a busy life.",25.0,15,1,1,1,3,5.0,White,Male,Protestant,South,Never married
+2,"At 22, she is a teacher who grew up in the South. She does not identify strongly with any religion. She lives in the South, enjoying a busy life.",22.0,16,1,2,4,3,5.0,White,Female,None,South,Never married
+4,"At 89, she is a office worker who grew up in the Midwest. She identifies as catholic. She is widowed and lives in the Midwest.",89.0,12,1,2,2,2,2.0,White,Female,Catholic,Midwest,Widowed
+2,"At middle-aged, he is a teacher who grew up in the West. He does not identify strongly with any religion. He lives in the West, enjoying a busy life.",,16,3,1,4,4,5.0,Other,Male,None,West,Never married
+5,"At 77, she is a office worker who grew up in the South. She identifies as catholic. She is married and lives in the South.",77.0,14,1,2,2,3,1.0,White,Female,Catholic,South,Married
+6,"At 28, she is a office worker who grew up in the South. She identifies as protestant. She is married and lives in the South.",28.0,13,1,2,1,3,1.0,White,Female,Protestant,South,Married
+6,"At 26, he is a blue-collar worker who grew up in the South. He does not identify strongly with any religion. He is married and lives in the South.",26.0,10,1,1,5,3,1.0,White,Male,Other,South,Married
+2,"At middle-aged, he is a teacher who grew up in the West. He does not identify strongly with any religion. He lives in the West, enjoying a busy life.",,20,3,1,4,4,5.0,Other,Male,None,West,Never married
+6,"At 67, he is a office worker who grew up in the Midwest. He identifies as protestant. He is married and lives in the Midwest.",67.0,14,1,1,1,2,1.0,White,Male,Protestant,Midwest,Married
+4,"At 26, she is a office worker who grew up in the Midwest. She identifies as protestant. She lives in the Midwest, enjoying a busy life.",26.0,13,2,2,1,2,5.0,Black,Female,Protestant,Midwest,Never married
+4,"At 70, she is a office worker who grew up in the South. She identifies as catholic. She is divorced and lives in the South.",70.0,15,1,2,2,3,3.0,White,Female,Catholic,South,Divorced
+6,"At 44, he is a office worker who grew up in the Midwest. He identifies as protestant. He is married and lives in the Midwest.",44.0,13,1,1,1,2,1.0,White,Male,Protestant,Midwest,Married
+4,"At 40, he is a office worker who grew up in the West. He does not identify strongly with any religion. He is married and lives in the West.",40.0,14,3,1,4,4,1.0,Other,Male,None,West,Married
+2,"At 35, she is a teacher who grew up in the Midwest. She does not identify strongly with any religion. She is married and lives in the Midwest.",35.0,16,3,2,4,2,1.0,Other,Female,None,Midwest,Married
+3,"At 40, he is a office worker who grew up in the West. He identifies as muslim/islam. He lives in the West, enjoying a busy life.",40.0,14,2,1,9,4,5.0,Black,Male,Muslim/Islam,West,Never married
+4,"At 57, she is a teacher who grew up in the Midwest. She identifies as protestant. She lives in the Midwest, enjoying a quiet life.",57.0,20,1,2,1,2,5.0,White,Female,Protestant,Midwest,Never married
+3,"At 39, he is a office worker who grew up in the Northeast. He does not identify strongly with any religion. He is divorced and lives in the Northeast.",39.0,13,1,1,4,1,3.0,White,Male,None,Northeast,Divorced
+2,"At 64, she is a teacher who grew up in the Northeast. She identifies as muslim/islam. She lives in the Northeast, enjoying a quiet life.",64.0,17,1,2,9,1,,White,Female,Muslim/Islam,Northeast,
+2,"At 63, she is a teacher who grew up in the Midwest. She identifies as protestant. She is divorced and lives in the Midwest.",63.0,16,2,2,1,2,3.0,Black,Female,Protestant,Midwest,Divorced
+3,"At 36, he is a teacher who grew up in the South. He does not identify strongly with any religion. He lives in the South, enjoying a busy life.",36.0,17,1,1,4,3,5.0,White,Male,None,South,Never married
+2,"At 35, she is a teacher who grew up in the Midwest. She does not identify strongly with any religion. She lives in the Midwest, enjoying a busy life.",35.0,18,1,2,4,2,5.0,White,Female,None,Midwest,Never married
+4,"At 30, he is a blue-collar worker who grew up in the Midwest. He does not identify strongly with any religion. He is widowed and lives in the Midwest.",30.0,0,1,1,4,2,2.0,White,Male,None,Midwest,Widowed
+4,"At 30, she is a office worker who grew up in the Midwest. She identifies as catholic. She lives in the Midwest, enjoying a busy life.",30.0,12,3,2,2,2,,Other,Female,Catholic,Midwest,
+5,"At 60, she is a office worker who grew up in the Midwest. She identifies as protestant. She is married and lives in the Midwest.",60.0,14,1,2,1,2,1.0,White,Female,Protestant,Midwest,Married
+5,"At 76, she is a office worker who grew up in the South. She identifies as jewish. She is married and lives in the South.",76.0,14,1,2,3,3,1.0,White,Female,Jewish,South,Married
+6,"At 63, he is a office worker who grew up in the Midwest. He identifies as protestant. He is married and lives in the Midwest.",63.0,12,1,1,1,2,1.0,White,Male,Protestant,Midwest,Married
+4,"At 70, she is a office worker who grew up in the Northeast. She identifies as catholic. She is married and lives in the Northeast.",70.0,12,1,2,2,1,1.0,White,Female,Catholic,Northeast,Married
+4,"At 25, he is a blue-collar worker who grew up in the West. He identifies as catholic. He lives in the West, enjoying a busy life.",25.0,10,1,1,2,4,5.0,White,Male,Catholic,West,Never married
+4,"At 31, she is a office worker who grew up in the Midwest. She identifies as catholic. She is married and lives in the Midwest.",31.0,12,1,2,2,2,1.0,White,Female,Catholic,Midwest,Married
+2,"At 60, she is a teacher who grew up in the Midwest. She does not identify strongly with any religion. She is widowed and lives in the Midwest.",60.0,20,1,2,4,2,2.0,White,Female,None,Midwest,Widowed
+4,"At 32, she is a office worker who grew up in the Midwest. She identifies as protestant. She is separated and lives in the Midwest.",32.0,12,2,2,1,2,4.0,Black,Female,Protestant,Midwest,Separated
+4,"At 35, he is a teacher who grew up in the West. He identifies as catholic. He is married and lives in the West.",35.0,17,3,1,2,4,1.0,Other,Male,Catholic,West,Married
+4,"At 62, he is a office worker who grew up in the Northeast. He identifies as catholic. He is married and lives in the Northeast.",62.0,12,1,1,2,1,1.0,White,Male,Catholic,Northeast,Married
+4,"At 72, he is a office worker who grew up in the West. He identifies as other eastern religions. He is married and lives in the West.",72.0,14,3,1,8,4,1.0,Other,Male,Other Eastern religions,West,Married
+3,"At 31, he is a office worker who grew up in the South. He does not identify strongly with any religion. He lives in the South, enjoying a busy life.",31.0,12,2,1,4,3,5.0,Black,Male,None,South,Never married
+2,"At 32, she is a teacher who grew up in the Midwest. She does not identify strongly with any religion. She is married and lives in the Midwest.",32.0,19,1,2,4,2,1.0,White,Female,None,Midwest,Married
+2,"At 77, she is a teacher who grew up in the West. She does not identify strongly with any religion. She lives in the West, enjoying a quiet life.",77.0,20,3,2,4,4,5.0,Other,Female,None,West,Never married
+2,"At 64, he is a teacher who grew up in the Northeast. He does not identify strongly with any religion. He is divorced and lives in the Northeast.",64.0,18,1,1,4,1,3.0,White,Male,None,Northeast,Divorced
+3,"At 40, she is a office worker who grew up in the West. She does not identify strongly with any religion. She is married and lives in the West.",40.0,14,2,2,5,4,1.0,Black,Female,Other,West,Married
+2,"At 30, she is a teacher who grew up in the Northeast. She does not identify strongly with any religion. She lives in the Northeast, enjoying a busy life.",30.0,16,1,2,4,1,5.0,White,Female,None,Northeast,Never married
+4,"At 34, he is a teacher who grew up in the Northeast. He identifies as protestant. He lives in the Northeast, enjoying a busy life.",34.0,16,1,1,1,1,5.0,White,Male,Protestant,Northeast,Never married
+6,"At 21, he is a office worker who grew up in the South. He identifies as orthodox-christian. He lives in the South, enjoying a busy life.",21.0,12,3,1,10,3,5.0,Other,Male,Orthodox-Christian,South,Never married
+2,"At 45, she is a teacher who grew up in the Northeast. She does not identify strongly with any religion. She is married and lives in the Northeast.",45.0,16,1,2,4,1,1.0,White,Female,None,Northeast,Married
+4,"At 50, she is a teacher who grew up in the West. She identifies as protestant. She is married and lives in the West.",50.0,16,3,2,1,4,1.0,Other,Female,Protestant,West,Married
+4,"At 61, he is a teacher who grew up in the West. He identifies as protestant. He is divorced and lives in the West.",61.0,16,1,1,1,4,3.0,White,Male,Protestant,West,Divorced
+6,"At 74, she is a office worker who grew up in the South. She identifies as protestant. She is divorced and lives in the South.",74.0,14,1,2,1,3,3.0,White,Female,Protestant,South,Divorced
+4,"At 58, he is a teacher who grew up in the Northeast. He identifies as jewish. He is married and lives in the Northeast.",58.0,17,1,1,3,1,1.0,White,Male,Jewish,Northeast,Married
+4,"At 23, he is a office worker who grew up in the Midwest. He identifies as catholic. He is married and lives in the Midwest.",23.0,13,1,1,2,2,1.0,White,Male,Catholic,Midwest,Married
+4,"At 60, he is a office worker who grew up in the Midwest. He identifies as catholic. He is married and lives in the Midwest.",60.0,13,3,1,2,2,1.0,Other,Male,Catholic,Midwest,Married
+2,"At 70, she is a teacher who grew up in the Midwest. She identifies as catholic. She is divorced and lives in the Midwest.",70.0,18,1,2,2,2,3.0,White,Female,Catholic,Midwest,Divorced
+3,"At middle-aged, she is a teacher who grew up in the Midwest. She identifies as catholic. She is married and lives in the Midwest.",,17,1,2,2,2,1.0,White,Female,Catholic,Midwest,Married
+4,"At 37, she is a teacher who grew up in the West. She identifies as protestant. She is married and lives in the West.",37.0,16,1,2,1,4,1.0,White,Female,Protestant,West,Married
+5,"At 80, she is a office worker who grew up in the West. She identifies as protestant. She is widowed and lives in the West.",80.0,12,1,2,1,4,2.0,White,Female,Protestant,West,Widowed
+4,"At 81, she is a office worker who grew up in the Midwest. She identifies as protestant. She is widowed and lives in the Midwest.",81.0,13,2,2,1,2,2.0,Black,Female,Protestant,Midwest,Widowed
+4,"At 70, he is a teacher who grew up in the Midwest. He identifies as protestant. He is married and lives in the Midwest.",70.0,16,1,1,1,2,1.0,White,Male,Protestant,Midwest,Married
+2,"At 74, she is a teacher who grew up in the Midwest. She identifies as protestant. She lives in the Midwest, enjoying a quiet life.",74.0,16,2,2,1,2,5.0,Black,Female,Protestant,Midwest,Never married
+2,"At 20, she is a office worker who grew up in the Northeast. She does not identify strongly with any religion. She lives in the Northeast, enjoying a busy life.",20.0,14,1,2,4,1,5.0,White,Female,None,Northeast,Never married
+2,"At 78, he is a office worker who grew up in the Midwest. He does not identify strongly with any religion. He is divorced and lives in the Midwest.",78.0,14,2,1,4,2,3.0,Black,Male,None,Midwest,Divorced
+2,"At 39, he is a teacher who grew up in the Northeast. He does not identify strongly with any religion. He is married and lives in the Northeast.",39.0,18,1,1,4,1,1.0,White,Male,None,Northeast,Married
+6,"At 62, she is a office worker who grew up in the South. She identifies as protestant. She is divorced and lives in the South.",62.0,14,1,2,1,3,3.0,White,Female,Protestant,South,Divorced
+6,"At 23, she is a office worker who grew up in the South. She identifies as protestant. She lives in the South, enjoying a busy life.",23.0,13,1,2,1,3,5.0,White,Female,Protestant,South,Never married
+4,"At 42, he is a teacher who grew up in the West. He identifies as hinduism. He is married and lives in the West.",42.0,16,3,1,7,4,1.0,Other,Male,Hinduism,West,Married
+3,"At 31, she is a teacher who grew up in the Northeast. She identifies as catholic. She is married and lives in the Northeast.",31.0,19,1,2,2,1,1.0,White,Female,Catholic,Northeast,Married
+5,"At 62, he is a office worker who grew up in the West. He identifies as protestant. He is divorced and lives in the West.",62.0,14,1,1,1,4,3.0,White,Male,Protestant,West,Divorced
+6,"At 27, she is a office worker who grew up in the South. She identifies as protestant. She is married and lives in the South.",27.0,12,1,2,1,3,1.0,White,Female,Protestant,South,Married
+2,"At 43, he is a teacher who grew up in the Northeast. He does not identify strongly with any religion. He is married and lives in the Northeast.",43.0,16,1,1,4,1,1.0,White,Male,None,Northeast,Married
+2,"At 66, she is a teacher who grew up in the Northeast. She identifies as catholic. She lives in the Northeast, enjoying a quiet life.",66.0,18,1,2,2,1,5.0,White,Female,Catholic,Northeast,Never married
+4,"At 81, he is a office worker who grew up in the Midwest. He identifies as catholic. He is divorced and lives in the Midwest.",81.0,12,1,1,2,2,3.0,White,Male,Catholic,Midwest,Divorced
+4,"At 73, he is a office worker who grew up in the South. He does not identify strongly with any religion. He is married and lives in the South.",73.0,14,1,1,4,3,1.0,White,Male,None,South,Married
+4,"At 34, she is a teacher who grew up in the South. She identifies as protestant. She lives in the South, enjoying a busy life.",34.0,17,1,2,1,3,5.0,White,Female,Protestant,South,Never married
+4,"At 40, he is a teacher who grew up in the Midwest. He identifies as catholic. He is married and lives in the Midwest.",40.0,16,1,1,2,2,1.0,White,Male,Catholic,Midwest,Married
+4,"At 63, she is a teacher who grew up in the West. She identifies as protestant. She lives in the West, enjoying a quiet life.",63.0,16,1,2,1,4,5.0,White,Female,Protestant,West,Never married
+4,"At 32, he is a teacher who grew up in the Midwest. He identifies as protestant. He lives in the Midwest, enjoying a busy life.",32.0,17,1,1,1,2,5.0,White,Male,Protestant,Midwest,Never married
+5,"At 18, he is a office worker who grew up in the Midwest. He identifies as protestant. He lives in the Midwest, enjoying a busy life.",18.0,12,1,1,1,2,5.0,White,Male,Protestant,Midwest,Never married
+4,"At 52, she is a teacher who grew up in the South. She identifies as protestant. She is divorced and lives in the South.",52.0,20,1,2,1,3,3.0,White,Female,Protestant,South,Divorced
+2,"At 67, he is a teacher who grew up in the Midwest. He does not identify strongly with any religion. He lives in the Midwest, enjoying a quiet life.",67.0,16,1,1,4,2,5.0,White,Male,None,Midwest,Never married
+4,"At 32, she is a teacher who grew up in the South. She identifies as catholic. She is married and lives in the South.",32.0,17,1,2,2,3,1.0,White,Female,Catholic,South,Married
+4,"At 26, he is a office worker who grew up in the Northeast. He does not identify strongly with any religion. He is married and lives in the Northeast.",26.0,12,1,1,4,1,1.0,White,Male,None,Northeast,Married
+4,"At 37, she is a office worker who grew up in the Midwest. She identifies as catholic. She is married and lives in the Midwest.",37.0,14,1,2,2,2,1.0,White,Female,Catholic,Midwest,Married
+6,"At 36, he is a office worker who grew up in the West. He identifies as protestant. He is married and lives in the West.",36.0,14,1,1,1,4,1.0,White,Male,Protestant,West,Married
+4,"At 44, she is a office worker who grew up in the Midwest. She identifies as protestant. She lives in the Midwest, enjoying a quiet life.",44.0,12,1,2,1,2,5.0,White,Female,Protestant,Midwest,Never married
+6,"At 66, he is a office worker who grew up in the South. He identifies as protestant. He is married and lives in the South.",66.0,12,1,1,1,3,1.0,White,Male,Protestant,South,Married
+2,"At 24, she is a office worker who grew up in the Midwest. She does not identify strongly with any religion. She lives in the Midwest, enjoying a busy life.",24.0,13,2,2,4,2,5.0,Black,Female,None,Midwest,Never married
+6,"At 32, she is a blue-collar worker who grew up in the South. She identifies as protestant. She lives in the South, enjoying a busy life.",32.0,11,1,2,1,3,5.0,White,Female,Protestant,South,Never married

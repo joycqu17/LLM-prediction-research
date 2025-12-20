@@ -1,0 +1,1409 @@
+---
+title: "exploration (7 variables selection)"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-11-06"
+---
+
+```{r setup, include=FALSE}
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+install.packages("haven")  
+library(haven)
+
+gss <- read_dta("/Users/joyqu/Desktop/PLSC/GSS2024.dta")
+```
+```{r}
+head(gss)
+dim(gss)
+```
+
+```{r}
+library(dplyr)
+library(tidyr)
+head(gss)
+
+# Keep only needed variables
+gss_clean <- gss %>%
+  select(polviews, age, educ, race, sex, occ10, region, marital) %>%
+  # remove "Don't Know / NA / Refused / No answer"
+  filter(!polviews %in% c(8, 9),    # GSS missing codes for polviews
+         !is.na(polviews)) %>%
+  # Convert categorical vars to factors
+  mutate(
+    polviews = as.integer(polviews),         # 1=ext lib … 7=ext cons
+    race = factor(race),
+    sex = factor(sex),
+    occ10 = factor(occ10),
+    region = factor(region),
+    marital = factor(marital)     
+  )
+head(gss_clean)
+```
+
+```{r}
+set.seed(123)   # makes the sample reproducible
+
+sample100 <- gss_clean %>%
+  drop_na() %>%        # removes any row with ANY missing value
+  sample_n(100)
+
+head(sample100)
+```
+```{r}
+sample100_nolabel <- sample100 %>%
+  select(-polviews)      # remove the numeric ideology variable
+head(sample100_nolabel)
+```
+```{r}
+write.csv(sample100_nolabel, "gss_sample_100_unlabeled.csv", row.names = FALSE)
+```
+
+```{r}
+var <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_var_predictions.csv")
+head(var)
+```
+
+```{r}
+# Extract variables
+y_true <- as.numeric(sample100$polviews)
+y_pred <- as.numeric(var$pred_polview)
+
+# Compute metrics
+MAE <- mean(abs(y_true - y_pred))
+MSE <- mean((y_true - y_pred)^2)
+Accuracy <- mean(y_true == y_pred)
+Within1 <- mean(abs(y_true - y_pred) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+```{r}
+narrative <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_narrative_predictions.csv")
+head(narrative)
+```
+
+```{r}
+# Extract variables
+y_true <- as.numeric(sample100$polviews)
+y_pred <- as.numeric(narrative$pred_polview_narr)
+
+# Compute metrics
+MAE <- mean(abs(y_true - y_pred))
+MSE <- mean((y_true - y_pred)^2)
+Accuracy <- mean(y_true == y_pred)
+Within1 <- mean(abs(y_true - y_pred) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+
+
+```{r}
+library(dplyr)
+library(readr)
+library(caret)    # for confusionMatrix
+library(MLmetrics)  # for f1
+library(purrr)
+```
+
+```{r}
+library(dplyr)
+
+df <- sample100 %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews,
+    age, sex, race, educ, marital, occ10, region   # <- keep whatever predictors you want
+  ) %>%
+  inner_join(
+    var %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+
+```
+
+```{r}
+library(dplyr)
+f1_macro <- function(true, pred) {
+  true <- as.character(true)
+  pred <- as.character(pred)
+  
+  f1_scores <- sapply(unique(true), function(cls) {
+    MLmetrics::F1_Score(
+      y_pred = pred == cls,
+      y_true = true == cls
+    )
+  })
+  mean(f1_scores, na.rm = TRUE)
+}
+
+f1_weighted <- function(true, pred) {
+  true <- as.character(true)
+  pred <- as.character(pred)
+  
+  classes <- unique(true)
+  weights <- prop.table(table(true))
+  
+  f1_scores <- sapply(classes, function(cls) {
+    MLmetrics::F1_Score(
+      y_pred = pred == cls,
+      y_true = true == cls
+    )
+  })
+  
+  sum(f1_scores * weights[names(f1_scores)], na.rm = TRUE)
+}
+
+# 1. Build df and KEEP ALL predictors from sample100
+df <- sample100 %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews,
+    # keep ALL predictors here:
+    age,
+    sex,
+    race,
+    educ,
+    marital,
+    occ10,
+    region
+  ) %>%
+  inner_join(
+    var %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+
+df <- df %>%
+  mutate(
+    # Factor version for F1
+    POLVIEWS_TRUE_fac = factor(POLVIEWS_TRUE),
+    pred_var_fac      = factor(pred_var,  levels = levels(POLVIEWS_TRUE_fac)),
+    pred_narr_fac     = factor(pred_narr, levels = levels(POLVIEWS_TRUE_fac)),
+
+    # Numeric version for bias / error
+    polviews_num = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var_num = as.numeric(as.character(pred_var)),
+    pred_narr_num = as.numeric(as.character(pred_narr)),
+
+    # Signed errors
+    error_var  = pred_var_num  - polviews_num,
+    error_narr = pred_narr_num - polviews_num
+  )
+results <- tibble(
+  Model = c("Variable Model", "Narrative Model"),
+  Macro_F1 = c(
+    f1_macro(df$POLVIEWS_TRUE_fac, df$pred_var_fac),
+    f1_macro(df$POLVIEWS_TRUE_fac, df$pred_narr_fac)
+  ),
+  Weighted_F1 = c(
+    f1_weighted(df$POLVIEWS_TRUE_fac, df$pred_var_fac),
+    f1_weighted(df$POLVIEWS_TRUE_fac, df$pred_narr_fac)
+  )
+)
+
+print(results)
+
+```
+
+
+```{r}
+mislabeled_comparison <- df %>%
+  mutate(
+    # Wrong / right flags
+    var_wrong  = pred_var  != POLVIEWS_TRUE,
+    narr_wrong = pred_narr != POLVIEWS_TRUE,
+
+    # Case types with only two models
+    case_type = case_when(
+      var_wrong  & !narr_wrong ~ "Only Variable Model Wrong",
+      !var_wrong & narr_wrong  ~ "Only Narrative Model Wrong",
+      var_wrong  & narr_wrong  ~ "Both Wrong",
+      TRUE                     ~ "Both Correct"
+    ),
+
+    # Differences vs true (numeric scale 1–7)
+    diff_var  = as.numeric(pred_var)  - as.numeric(POLVIEWS_TRUE),
+    diff_narr = as.numeric(pred_narr) - as.numeric(POLVIEWS_TRUE),
+
+    # Bias direction for each model (only label as too lib/con if it's wrong)
+    bias_var = dplyr::case_when(
+      !var_wrong         ~ "Correct",
+      diff_var  > 0      ~ "Too Conservative",
+      diff_var  < 0      ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    ),
+    bias_narr = dplyr::case_when(
+      !narr_wrong        ~ "Correct",
+      diff_narr  > 0     ~ "Too Conservative",
+      diff_narr  < 0     ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    )
+  ) %>%
+  select(
+    row_id, POLVIEWS_TRUE,
+    pred_var, pred_narr,
+    var_wrong, narr_wrong,
+    case_type,
+    bias_var, bias_narr
+  )
+
+# Save to CSV
+write.csv(mislabeled_comparison,
+          "mislabeled_cases_comparison.csv",
+          row.names = FALSE)
+
+```
+
+```{r}
+bias_table <- mislabeled_comparison %>%
+  select(bias_var, bias_narr) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "model",
+    values_to = "bias"
+  ) %>%
+  dplyr::filter(bias != "Correct") %>%   # only mislabeled cases
+  dplyr::group_by(model, bias) %>%
+  dplyr::summarise(count = dplyr::n(), .groups = "drop_last") %>%
+  dplyr::mutate(
+    percent = count / sum(count) * 100
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    model = dplyr::recode(
+      model,
+      bias_var  = "Variable Model",
+      bias_narr = "Narrative Model"
+    )
+  ) %>%
+  dplyr::arrange(model, bias)
+bias_table
+```
+
+```{r}
+#true polviews distribution
+library(ggplot2)
+
+ggplot(df, aes(x = POLVIEWS_TRUE)) +
+  geom_bar() +
+  ggtitle("True POLVIEWS Distribution")
+
+ggplot(df, aes(x = pred_var)) +
+  geom_bar() +
+  ggtitle("Variable Model Pred Distribution")
+
+ggplot(df, aes(x = pred_narr)) +
+  geom_bar() +
+  ggtitle("Narrative Model Pred Distribution")
+
+```
+
+```{r}
+library(dplyr)
+
+df <- df %>%
+  mutate(
+    POLVIEWS_TRUE = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var      = as.numeric(as.character(pred_var)),
+    pred_narr     = as.numeric(as.character(pred_narr))
+  )
+df <- df %>%
+  mutate(
+    error_var  = pred_var  - POLVIEWS_TRUE,
+    error_narr = pred_narr - POLVIEWS_TRUE
+  )
+
+summary(df$error_var)
+summary(df$error_narr)
+mean(df$error_var,  na.rm = TRUE)  # > 0 => too conservative on average
+mean(df$error_narr, na.rm = TRUE)
+
+```
+
+```{r}
+
+bias_by_predictor <- function(data, predictor) {
+  data %>%
+    group_by({{ predictor }}) %>%
+    summarise(
+      n = n(),
+      mean_error_var  = mean(error_var, na.rm = TRUE),
+      mean_error_narr = mean(error_narr, na.rm = TRUE),
+      
+      prop_too_cons_var = mean(error_var  > 0, na.rm = TRUE),
+      prop_too_lib_var  = mean(error_var  < 0, na.rm = TRUE),
+      
+      prop_too_cons_narr = mean(error_narr > 0, na.rm = TRUE),
+      prop_too_lib_narr  = mean(error_narr < 0, na.rm = TRUE)
+    ) %>%
+    arrange(desc(mean_error_var))
+}
+bias_by_predictor(df, age)
+bias_by_predictor(df, sex)
+bias_by_predictor(df, race)
+bias_by_predictor(df, educ)
+bias_by_predictor(df, marital)
+bias_by_predictor(df, occ10)
+bias_by_predictor(df, region)
+
+#when mean error > 0, this predictor is more conservative on average
+#prop_too_cons_var: proportion of cases where variable model is too conservative
+```
+
+
+
+```{r}
+df$occ10 <- as.numeric(as.character(df$occ10))
+
+label_maps <- list(
+
+  # ---- Gender ----
+  sex = c(
+    "1" = "Male",
+    "2" = "Female"
+  ),
+
+  # ---- Race ----
+  race = c(
+    "1" = "White",
+    "2" = "Black",
+    "3" = "Other"
+  ),
+
+  # ---- Marital Status ----
+  marital = c(
+    "1" = "Married",
+    "2" = "Widowed",
+    "3" = "Divorced",
+    "4" = "Separated",
+    "5" = "Never married"
+  ),
+
+  # ---- Region: your custom 1–4 mapping ----
+  region = c(
+    "1" = "Northeast",
+    "2" = "Midwest",
+    "3" = "South",
+    "4" = "West"
+  ),
+
+  # ---- OCC10 major category mapping ----
+  # We'll assign labels based on ranges inside the function
+  occ10 = c(
+    "0010-0950" = "Management/Professional",
+    "1000-1240" = "Service",
+    "1300-1965" = "Sales/Office",
+    "2000-3955" = "Construction/Maintenance",
+    "4000-5940" = "Production/Transportation",
+    "5950-9750" = "Military"
+  )
+)
+map_occ10 <- function(code) {
+  if (is.na(code)) return(NA_character_)
+  if (code >= 10   & code <= 950)   return("Management/Professional")
+  if (code >= 1000 & code <= 1240)  return("Service")
+  if (code >= 1300 & code <= 1965)  return("Sales/Office")
+  if (code >= 2000 & code <= 3955)  return("Construction/Maintenance")
+  if (code >= 4000 & code <= 5940)  return("Production/Transportation")
+  if (code >= 5950 & code <= 9830)  return("Military")
+  return(NA_character_)
+}
+bucket_age <- function(a) {
+  dplyr::case_when(
+    is.na(a)          ~ NA_character_,
+    a < 30            ~ "18–29",
+    a >= 30 & a < 45  ~ "30–44",
+    a >= 45 & a < 65  ~ "45–64",
+    a >= 65           ~ "65+",
+    TRUE ~ NA_character_
+  )
+}
+
+plot_mean_error_by_predictor <- function(data, predictor) {
+
+  pred_sym  <- rlang::ensym(predictor)
+  pred_name <- rlang::as_name(pred_sym)
+
+  summary_df <- data %>%
+    dplyr::group_by(!!pred_sym) %>%
+    dplyr::summarise(
+      n = dplyr::n(),
+      mean_error_var  = mean(error_var,  na.rm = TRUE),
+      mean_error_narr = mean(error_narr, na.rm = TRUE),
+      .groups = "drop"
+    ) %>%
+    tidyr::pivot_longer(
+      cols = c(mean_error_var, mean_error_narr),
+      names_to = "model",
+      values_to = "mean_error"
+    ) %>%
+    dplyr::mutate(
+      model = dplyr::recode(
+        model,
+        mean_error_var  = "Variable model",
+        mean_error_narr = "Narrative model"
+      )
+    )
+
+  # Now add human-readable labels
+  if (pred_name == "occ10") {
+
+    summary_df <- summary_df %>%
+      dplyr::mutate(
+        predictor_label = vapply(.data[[pred_name]], map_occ10, character(1))
+      )
+
+  } else if (pred_name == "age") {
+
+    # use age buckets instead of raw ages
+    summary_df <- summary_df %>%
+      dplyr::mutate(
+        predictor_label = bucket_age(.data[[pred_name]])
+      )
+  } else if (pred_name == "educ") {
+
+    summary_df <- summary_df %>%
+      dplyr::mutate(
+        predictor_label = factor(
+          as.numeric(.data[[pred_name]]),
+          levels = sort(unique(as.numeric(.data[[pred_name]])))
+        )
+      )
+
+  } else if (pred_name %in% names(label_maps)) {
+
+    map_vec <- label_maps[[pred_name]]
+
+    summary_df <- summary_df %>%
+      dplyr::mutate(
+        predictor_label = map_vec[as.character(.data[[pred_name]])]
+      )
+
+  } else {
+
+    summary_df <- summary_df %>%
+      dplyr::mutate(
+        predictor_label = as.character(.data[[pred_name]])
+      )
+  }
+
+  ggplot(summary_df,
+         aes(x = predictor_label,
+             y = mean_error,
+             fill = model)) +
+    geom_col(position = "dodge") +
+    geom_hline(yintercept = 0, linetype = "dashed") +
+    labs(
+      title = paste("Mean signed error by", pred_name),
+      x = pred_name,
+      y = "Mean signed error (prediction - true)",
+      fill = "Model"
+    ) +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}
+
+plot_mean_error_by_predictor(df, age)
+plot_mean_error_by_predictor(df, sex)
+plot_mean_error_by_predictor(df, race)
+plot_mean_error_by_predictor(df, educ)
+plot_mean_error_by_predictor(df, marital)
+plot_mean_error_by_predictor(df, occ10)
+plot_mean_error_by_predictor(df, region)
+
+```
+
+```{r}
+#collapse POLVIEWS into two categories: conservative or not conservative
+sample100_binary <- sample100 %>%
+  mutate(
+    polviews_binary = case_when(
+      polviews %in% c(1, 2, 3, 4) ~ 0,   # Not conservative
+      polviews %in% c(5, 6, 7) ~ 1,   # Conservative
+    )
+  ) %>%
+  filter(!is.na(polviews_binary))     
+head(sample100_binary)
+
+sample100_nolabel_bin <- sample100_binary %>%
+  select(-polviews_binary) %>% # remove the binary ideology variable) 
+  select(-polviews) # remove the numeric ideology variable
+       
+    
+head(sample100_nolabel_bin)
+
+
+write.csv(sample100_nolabel_bin, "gss_sample_100_unlabeled_bin.csv", row.names = FALSE)
+```
+```{r}
+var_bin <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_var_predictions_bin.csv")
+head(var_bin)
+
+# Extract variables
+y_true_bin <- as.numeric(sample100_binary$polviews_binary)
+y_pred_bin <- as.numeric(var_bin$pred_polview)
+
+# Compute metrics
+MAE <- mean(abs(y_true_bin - y_pred_bin))
+MSE <- mean((y_true_bin - y_pred_bin)^2)
+Accuracy <- mean(y_true_bin == y_pred_bin)
+Within1 <- mean(abs(y_true_bin - y_pred_bin) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+```{r}
+narrative_bin <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_narrative_predictions_bin.csv")
+head(narrative_bin)
+# Extract variables
+y_true_bin <- as.numeric(sample100_binary$polviews_binary)
+y_pred_bin <- as.numeric(narrative_bin$pred_polview_narr)
+
+# Compute metrics
+MAE <- mean(abs(y_true_bin - y_pred_bin))
+MSE <- mean((y_true_bin - y_pred_bin)^2)
+Accuracy <- mean(y_true_bin == y_pred_bin)
+Within1 <- mean(abs(y_true_bin - y_pred_bin) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+```{r}
+df_bin <- sample100_binary %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews_binary,
+    age, sex, race, educ, marital, occ10, region   # <- keep whatever predictors you want
+  ) %>%
+  inner_join(
+    var_bin %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative_bin %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+head(df_bin)
+
+df_bin <- df_bin %>%
+  mutate(
+    # Factor version for F1
+    POLVIEWS_TRUE_fac = factor(POLVIEWS_TRUE),
+    pred_var_fac      = factor(pred_var,  levels = levels(POLVIEWS_TRUE_fac)),
+    pred_narr_fac     = factor(pred_narr, levels = levels(POLVIEWS_TRUE_fac)),
+
+    # Numeric version for bias / error
+    polviews_num = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var_num = as.numeric(as.character(pred_var)),
+    pred_narr_num = as.numeric(as.character(pred_narr)),
+
+    # Signed errors
+    error_var  = pred_var_num  - polviews_num,
+    error_narr = pred_narr_num - polviews_num
+  )
+results <- tibble(
+  Model = c("Variable Model", "Narrative Model"),
+  Macro_F1 = c(
+    f1_macro(df_bin$POLVIEWS_TRUE_fac, df_bin$pred_var_fac),
+    f1_macro(df_bin$POLVIEWS_TRUE_fac, df_bin$pred_narr_fac)
+  ),
+  Weighted_F1 = c(
+    f1_weighted(df_bin$POLVIEWS_TRUE_fac, df_bin$pred_var_fac),
+    f1_weighted(df_bin$POLVIEWS_TRUE_fac, df_bin$pred_narr_fac)
+  )
+)
+
+print(results)
+```
+```{r}
+mislabeled_comparison <- df_bin %>%
+  mutate(
+    # Wrong / right flags
+    var_wrong  = pred_var  != POLVIEWS_TRUE,
+    narr_wrong = pred_narr != POLVIEWS_TRUE,
+
+    # Case types with only two models
+    case_type = case_when(
+      var_wrong  & !narr_wrong ~ "Only Variable Model Wrong",
+      !var_wrong & narr_wrong  ~ "Only Narrative Model Wrong",
+      var_wrong  & narr_wrong  ~ "Both Wrong",
+      TRUE                     ~ "Both Correct"
+    ),
+
+    # Differences vs true (numeric scale 1–7)
+    diff_var  = as.numeric(pred_var)  - as.numeric(POLVIEWS_TRUE),
+    diff_narr = as.numeric(pred_narr) - as.numeric(POLVIEWS_TRUE),
+
+    # Bias direction for each model (only label as too lib/con if it's wrong)
+    bias_var = dplyr::case_when(
+      !var_wrong         ~ "Correct",
+      diff_var  > 0      ~ "Too Conservative",
+      diff_var  < 0      ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    ),
+    bias_narr = dplyr::case_when(
+      !narr_wrong        ~ "Correct",
+      diff_narr  > 0     ~ "Too Conservative",
+      diff_narr  < 0     ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    )
+  ) %>%
+  select(
+    row_id, POLVIEWS_TRUE,
+    pred_var, pred_narr,
+    var_wrong, narr_wrong,
+    case_type,
+    bias_var, bias_narr
+  )
+
+# Save to CSV
+write.csv(mislabeled_comparison,
+          "mislabeled_cases_comparison_bin.csv",
+          row.names = FALSE)
+
+bias_table <- mislabeled_comparison %>%
+  select(bias_var, bias_narr) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "model",
+    values_to = "bias"
+  ) %>%
+  dplyr::filter(bias != "Correct") %>%   # only mislabeled cases
+  dplyr::group_by(model, bias) %>%
+  dplyr::summarise(count = dplyr::n(), .groups = "drop_last") %>%
+  dplyr::mutate(
+    percent = count / sum(count) * 100
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    model = dplyr::recode(
+      model,
+      bias_var  = "Variable Model",
+      bias_narr = "Narrative Model"
+    )
+  ) %>%
+  dplyr::arrange(model, bias)
+bias_table
+```
+
+```{r}
+#true polviews distribution
+
+ggplot(df_bin, aes(x = POLVIEWS_TRUE)) +
+  geom_bar() +
+  ggtitle("True POLVIEWS Distribution")
+
+ggplot(df_bin, aes(x = pred_var)) +
+  geom_bar() +
+  ggtitle("Variable Model Pred Distribution")
+
+ggplot(df_bin, aes(x = pred_narr)) +
+  geom_bar() +
+  ggtitle("Narrative Model Pred Distribution")
+```
+
+```{r}
+df_bin$occ10 <- as.numeric(as.character(df_bin$occ10))
+bias_by_predictor(df_bin, age)
+bias_by_predictor(df_bin, sex)
+bias_by_predictor(df_bin, race)
+bias_by_predictor(df_bin, educ)
+bias_by_predictor(df_bin, marital)
+bias_by_predictor(df_bin, occ10)
+bias_by_predictor(df_bin, region)
+
+plot_mean_error_by_predictor(df_bin, age)
+plot_mean_error_by_predictor(df_bin, sex)
+plot_mean_error_by_predictor(df_bin, race)
+plot_mean_error_by_predictor(df_bin, educ)
+plot_mean_error_by_predictor(df_bin, marital)
+plot_mean_error_by_predictor(df_bin, occ10)
+plot_mean_error_by_predictor(df_bin, region)
+
+```
+
+```{r}
+#collapse POLVIEWS into three categories: 1 = Liberal, 2 = Moderate, 3 = Conservative
+sample100_3 <- sample100 %>%
+  mutate(
+    polviews_3 = case_when(
+      polviews %in% c(1, 2, 3) ~ 1,   # liberal
+      polviews %in% c(4) ~ 2,   # moderate
+      polviews %in% c(5, 6, 7) ~ 3    # conservative
+    )
+  ) %>% 
+  filter(!is.na(polviews_3))     
+head(sample100_3)
+
+sample100_nolabel_3 <- sample100_3 %>%
+  select(-polviews_3) %>% # remove the binary ideology variable) 
+  select(-polviews) # remove the numeric ideology variable
+       
+    
+head(sample100_nolabel_3)
+
+
+write.csv(sample100_nolabel_3, "gss_sample_100_unlabeled_3.csv", row.names = FALSE)
+```
+```{r}
+var_3 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_var_predictions_3.csv")
+head(var_3)
+
+# Extract variables
+y_true_3 <- as.numeric(sample100_3$polviews_3)
+y_pred_3 <- as.numeric(var_3$pred_polview)
+
+# Compute metrics
+MAE <- mean(abs(y_true_3 - y_pred_3))
+MSE <- mean((y_true_3 - y_pred_3)^2)
+Accuracy <- mean(y_true_3 == y_pred_3)
+Within1 <- mean(abs(y_true_3 - y_pred_3) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+
+narrative_3 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_narrative_predictions_3.csv")
+head(narrative_3)
+# Extract variables
+y_true_3 <- as.numeric(sample100_3$polviews_3)
+y_pred_3 <- as.numeric(narrative_3$pred_polview_narr)
+
+# Compute metrics
+MAE <- mean(abs(y_true_3 - y_pred_3))
+MSE <- mean((y_true_3 - y_pred_3)^2)
+Accuracy <- mean(y_true_3 == y_pred_3)
+Within1 <- mean(abs(y_true_3 - y_pred_3) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+```{r}
+df_3 <- sample100_3 %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews_3,
+    age, sex, race, educ, marital, occ10, region   # <- keep whatever predictors you want
+  ) %>%
+  inner_join(
+    var_3 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative_3 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+head(df_3)
+
+df_3 <- df_3 %>%
+  mutate(
+    # Factor version for F1
+    POLVIEWS_TRUE_fac = factor(POLVIEWS_TRUE),
+    pred_var_fac      = factor(pred_var,  levels = levels(POLVIEWS_TRUE_fac)),
+    pred_narr_fac     = factor(pred_narr, levels = levels(POLVIEWS_TRUE_fac)),
+
+    # Numeric version for bias / error
+    polviews_num = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var_num = as.numeric(as.character(pred_var)),
+    pred_narr_num = as.numeric(as.character(pred_narr)),
+
+    # Signed errors
+    error_var  = pred_var_num  - polviews_num,
+    error_narr = pred_narr_num - polviews_num
+  )
+results <- tibble(
+  Model = c("Variable Model", "Narrative Model"),
+  Macro_F1 = c(
+    f1_macro(df_3$POLVIEWS_TRUE_fac, df_3$pred_var_fac),
+    f1_macro(df_3$POLVIEWS_TRUE_fac, df_3$pred_narr_fac)
+  ),
+  Weighted_F1 = c(
+    f1_weighted(df_3$POLVIEWS_TRUE_fac, df_3$pred_var_fac),
+    f1_weighted(df_3$POLVIEWS_TRUE_fac, df_3$pred_narr_fac)
+  )
+)
+
+print(results)
+```
+```{r}
+mislabeled_comparison <- df_3 %>%
+  mutate(
+    # Wrong / right flags
+    var_wrong  = pred_var  != POLVIEWS_TRUE,
+    narr_wrong = pred_narr != POLVIEWS_TRUE,
+
+    # Case types with only two models
+    case_type = case_when(
+      var_wrong  & !narr_wrong ~ "Only Variable Model Wrong",
+      !var_wrong & narr_wrong  ~ "Only Narrative Model Wrong",
+      var_wrong  & narr_wrong  ~ "Both Wrong",
+      TRUE                     ~ "Both Correct"
+    ),
+
+    # Differences vs true (numeric scale 1–7)
+    diff_var  = as.numeric(pred_var)  - as.numeric(POLVIEWS_TRUE),
+    diff_narr = as.numeric(pred_narr) - as.numeric(POLVIEWS_TRUE),
+
+    # Bias direction for each model (only label as too lib/con if it's wrong)
+    bias_var = dplyr::case_when(
+      !var_wrong         ~ "Correct",
+      diff_var  > 0      ~ "Too Conservative",
+      diff_var  < 0      ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    ),
+    bias_narr = dplyr::case_when(
+      !narr_wrong        ~ "Correct",
+      diff_narr  > 0     ~ "Too Conservative",
+      diff_narr  < 0     ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    )
+  ) %>%
+  select(
+    row_id, POLVIEWS_TRUE,
+    pred_var, pred_narr,
+    var_wrong, narr_wrong,
+    case_type,
+    bias_var, bias_narr
+  )
+
+# Save to CSV
+write.csv(mislabeled_comparison,
+          "mislabeled_cases_comparison_3.csv",
+          row.names = FALSE)
+
+bias_table <- mislabeled_comparison %>%
+  select(bias_var, bias_narr) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "model",
+    values_to = "bias"
+  ) %>%
+  dplyr::filter(bias != "Correct") %>%   # only mislabeled cases
+  dplyr::group_by(model, bias) %>%
+  dplyr::summarise(count = dplyr::n(), .groups = "drop_last") %>%
+  dplyr::mutate(
+    percent = count / sum(count) * 100
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    model = dplyr::recode(
+      model,
+      bias_var  = "Variable Model",
+      bias_narr = "Narrative Model"
+    )
+  ) %>%
+  dplyr::arrange(model, bias)
+bias_table
+
+#true polviews distribution
+
+ggplot(df_3, aes(x = POLVIEWS_TRUE)) +
+  geom_bar() +
+  ggtitle("True POLVIEWS Distribution")
+
+ggplot(df_3, aes(x = pred_var)) +
+  geom_bar() +
+  ggtitle("Variable Model Pred Distribution")
+
+ggplot(df_3, aes(x = pred_narr)) +
+  geom_bar() +
+  ggtitle("Narrative Model Pred Distribution")
+```
+```{r}
+df_3$occ10 <- as.numeric(as.character(df_3$occ10))
+bias_by_predictor(df_3, age)
+bias_by_predictor(df_3, sex)
+bias_by_predictor(df_3, race)
+bias_by_predictor(df_3, educ)
+bias_by_predictor(df_3, marital)
+bias_by_predictor(df_3, occ10)
+bias_by_predictor(df_3, region)
+
+plot_mean_error_by_predictor(df_3, age)
+plot_mean_error_by_predictor(df_3, sex)
+plot_mean_error_by_predictor(df_3, race)
+plot_mean_error_by_predictor(df_3, educ)
+plot_mean_error_by_predictor(df_3, marital)
+plot_mean_error_by_predictor(df_3, occ10)
+plot_mean_error_by_predictor(df_3, region)
+```
+
+```{r}
+#collapse POLVIEWS into four categories: 
+sample100_4 <- sample100 %>%
+  mutate(
+    polviews_4= case_when(
+      polviews %in% c(1, 2) ~ 1,   # extremely liberal
+      polviews %in% c(3) ~ 2,   # slightly liberal
+      polviews %in% c(4) ~ 3,    # moderate
+      polviews %in% c(5, 6, 7) ~ 4    # conservative
+    )
+  ) %>% 
+  filter(!is.na(polviews_4))     
+head(sample100_4)
+
+sample100_nolabel_4 <- sample100_4 %>%
+  select(-polviews_4) %>% # remove the ideology variable) 
+  select(-polviews) # remove the numeric ideology variable
+       
+    
+head(sample100_nolabel_4)
+
+
+write.csv(sample100_nolabel_4, "gss_sample_100_unlabeled_4.csv", row.names = FALSE)
+```
+```{r}
+var_4 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_var_predictions_4.csv")
+head(var_4)
+
+# Extract variables
+y_true_4 <- as.numeric(sample100_4$polviews_4)
+y_pred_4 <- as.numeric(var_4$pred_polview)
+
+# Compute metrics
+MAE <- mean(abs(y_true_4 - y_pred_4))
+MSE <- mean((y_true_4 - y_pred_4)^2)
+Accuracy <- mean(y_true_4 == y_pred_4)
+Within1 <- mean(abs(y_true_4 - y_pred_4) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+
+narrative_4 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_narrative_predictions_4.csv")
+head(narrative_4)
+# Extract variables
+y_true_4 <- as.numeric(sample100_4$polviews_4)
+y_pred_4 <- as.numeric(narrative_4$pred_polview_narr)
+
+# Compute metrics
+MAE <- mean(abs(y_true_4 - y_pred_4))
+MSE <- mean((y_true_4 - y_pred_4)^2)
+Accuracy <- mean(y_true_4 == y_pred_4)
+Within1 <- mean(abs(y_true_4 - y_pred_4) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+
+```{r}
+df_4 <- sample100_4 %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews_4,
+    age, sex, race, educ, marital, occ10, region   # <- keep whatever predictors you want
+  ) %>%
+  inner_join(
+    var_4 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative_4 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+head(df_4)
+
+df_4 <- df_4 %>%
+  mutate(
+    # Factor version for F1
+    POLVIEWS_TRUE_fac = factor(POLVIEWS_TRUE),
+    pred_var_fac      = factor(pred_var,  levels = levels(POLVIEWS_TRUE_fac)),
+    pred_narr_fac     = factor(pred_narr, levels = levels(POLVIEWS_TRUE_fac)),
+
+    # Numeric version for bias / error
+    polviews_num = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var_num = as.numeric(as.character(pred_var)),
+    pred_narr_num = as.numeric(as.character(pred_narr)),
+
+    # Signed errors
+    error_var  = pred_var_num  - polviews_num,
+    error_narr = pred_narr_num - polviews_num
+  )
+results <- tibble(
+  Model = c("Variable Model", "Narrative Model"),
+  Macro_F1 = c(
+    f1_macro(df_4$POLVIEWS_TRUE_fac, df_4$pred_var_fac),
+    f1_macro(df_4$POLVIEWS_TRUE_fac, df_4$pred_narr_fac)
+  ),
+  Weighted_F1 = c(
+    f1_weighted(df_4$POLVIEWS_TRUE_fac, df_4$pred_var_fac),
+    f1_weighted(df_4$POLVIEWS_TRUE_fac, df_4$pred_narr_fac)
+  )
+)
+
+print(results)
+```
+
+```{r}
+mislabeled_comparison <- df_4 %>%
+  mutate(
+    # Wrong / right flags
+    var_wrong  = pred_var  != POLVIEWS_TRUE,
+    narr_wrong = pred_narr != POLVIEWS_TRUE,
+
+    # Case types with only two models
+    case_type = case_when(
+      var_wrong  & !narr_wrong ~ "Only Variable Model Wrong",
+      !var_wrong & narr_wrong  ~ "Only Narrative Model Wrong",
+      var_wrong  & narr_wrong  ~ "Both Wrong",
+      TRUE                     ~ "Both Correct"
+    ),
+
+    # Differences vs true (numeric scale 1–7)
+    diff_var  = as.numeric(pred_var)  - as.numeric(POLVIEWS_TRUE),
+    diff_narr = as.numeric(pred_narr) - as.numeric(POLVIEWS_TRUE),
+
+    # Bias direction for each model (only label as too lib/con if it's wrong)
+    bias_var = dplyr::case_when(
+      !var_wrong         ~ "Correct",
+      diff_var  > 0      ~ "Too Conservative",
+      diff_var  < 0      ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    ),
+    bias_narr = dplyr::case_when(
+      !narr_wrong        ~ "Correct",
+      diff_narr  > 0     ~ "Too Conservative",
+      diff_narr  < 0     ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    )
+  ) %>%
+  select(
+    row_id, POLVIEWS_TRUE,
+    pred_var, pred_narr,
+    var_wrong, narr_wrong,
+    case_type,
+    bias_var, bias_narr
+  )
+
+# Save to CSV
+write.csv(mislabeled_comparison,
+          "mislabeled_cases_comparison_4.csv",
+          row.names = FALSE)
+
+bias_table <- mislabeled_comparison %>%
+  select(bias_var, bias_narr) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "model",
+    values_to = "bias"
+  ) %>%
+  dplyr::filter(bias != "Correct") %>%   # only mislabeled cases
+  dplyr::group_by(model, bias) %>%
+  dplyr::summarise(count = dplyr::n(), .groups = "drop_last") %>%
+  dplyr::mutate(
+    percent = count / sum(count) * 100
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    model = dplyr::recode(
+      model,
+      bias_var  = "Variable Model",
+      bias_narr = "Narrative Model"
+    )
+  ) %>%
+  dplyr::arrange(model, bias)
+bias_table
+
+#true polviews distribution
+
+ggplot(df_4, aes(x = POLVIEWS_TRUE)) +
+  geom_bar() +
+  ggtitle("True POLVIEWS Distribution")
+
+ggplot(df_4, aes(x = pred_var)) +
+  geom_bar() +
+  ggtitle("Variable Model Pred Distribution")
+
+ggplot(df_4, aes(x = pred_narr)) +
+  geom_bar() +
+  ggtitle("Narrative Model Pred Distribution")
+```
+```{r}
+df_4$occ10 <- as.numeric(as.character(df_4$occ10))
+bias_by_predictor(df_4, age)
+bias_by_predictor(df_4, sex)
+bias_by_predictor(df_4, race)
+bias_by_predictor(df_4, educ)
+bias_by_predictor(df_4, marital)
+bias_by_predictor(df_4, occ10)
+bias_by_predictor(df_4, region)
+
+plot_mean_error_by_predictor(df_4, age)
+plot_mean_error_by_predictor(df_4, sex)
+plot_mean_error_by_predictor(df_4, race)
+plot_mean_error_by_predictor(df_4, educ)
+plot_mean_error_by_predictor(df_4, marital)
+plot_mean_error_by_predictor(df_4, occ10)
+plot_mean_error_by_predictor(df_4, region)
+```
+
+```{r}
+#collapse POLVIEWS into five categories
+sample100_5 <- sample100 %>%
+  mutate(
+    polviews_5= case_when(
+      polviews %in% c(1) ~ 1,   # extremely liberal
+      polviews %in% c(2,3) ~ 2,   #  liberal
+      polviews %in% c(4) ~ 3,    # moderate
+      polviews %in% c(5,6) ~ 4,    # conservative
+      polviews %in% c(7) ~ 5    # extremely conservative
+    )
+  ) %>% 
+  filter(!is.na(polviews_5))     
+head(sample100_5)
+
+sample100_nolabel_5 <- sample100_5 %>%
+  select(-polviews_5) %>% # remove the ideology variable) 
+  select(-polviews) # remove the numeric ideology variable
+       
+    
+head(sample100_nolabel_5)
+
+
+write.csv(sample100_nolabel_5, "gss_sample_100_unlabeled_5.csv", row.names = FALSE)
+```
+```{r}
+var_5 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_var_predictions_5.csv")
+head(var_5)
+
+# Extract variables
+y_true_5 <- as.numeric(sample100_5$polviews_5)
+y_pred_5 <- as.numeric(var_5$pred_polview)
+
+# Compute metrics
+MAE <- mean(abs(y_true_5 - y_pred_5))
+MSE <- mean((y_true_5 - y_pred_5)^2)
+Accuracy <- mean(y_true_5 == y_pred_5)
+Within1 <- mean(abs(y_true_5 - y_pred_5) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+
+narrative_5 <- read.csv("/Users/joyqu/Desktop/PLSC/gss_gpt5_narrative_predictions_5.csv")
+head(narrative_5)
+# Extract variables
+y_true_5 <- as.numeric(sample100_5$polviews_5)
+y_pred_5 <- as.numeric(narrative_5$pred_polview_narr)
+
+# Compute metrics
+MAE <- mean(abs(y_true_5 - y_pred_5))
+MSE <- mean((y_true_5 - y_pred_5)^2)
+Accuracy <- mean(y_true_5 == y_pred_5)
+Within1 <- mean(abs(y_true_5 - y_pred_5) <= 1)
+
+cat("Mean Absolute Error:", MAE, "\n")
+cat("Mean Squared Error:", MSE, "\n")
+cat("Exact Match Accuracy:", round(Accuracy*100, 1), "%\n")
+cat("Within ±1 Accuracy:", round(Within1*100, 1), "%\n")
+```
+
+```{r}
+df_5 <- sample100_5 %>%
+  mutate(row_id = row_number()) %>%
+  select(
+    row_id,
+    POLVIEWS_TRUE = polviews_5,
+    age, sex, race, educ, marital, occ10, region   # <- keep whatever predictors you want
+  ) %>%
+  inner_join(
+    var_5 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_var = pred_polview),
+    by = "row_id"
+  ) %>%
+  inner_join(
+    narrative_5 %>%
+      mutate(row_id = row_number()) %>%
+      select(row_id, pred_narr = pred_polview_narr),
+    by = "row_id"
+  )
+head(df_5)
+
+df_5 <- df_5 %>%
+  mutate(
+    # Factor version for F1
+    POLVIEWS_TRUE_fac = factor(POLVIEWS_TRUE),
+    pred_var_fac      = factor(pred_var,  levels = levels(POLVIEWS_TRUE_fac)),
+    pred_narr_fac     = factor(pred_narr, levels = levels(POLVIEWS_TRUE_fac)),
+
+    # Numeric version for bias / error
+    polviews_num = as.numeric(as.character(POLVIEWS_TRUE)),
+    pred_var_num = as.numeric(as.character(pred_var)),
+    pred_narr_num = as.numeric(as.character(pred_narr)),
+
+    # Signed errors
+    error_var  = pred_var_num  - polviews_num,
+    error_narr = pred_narr_num - polviews_num
+  )
+results <- tibble(
+  Model = c("Variable Model", "Narrative Model"),
+  Macro_F1 = c(
+    f1_macro(df_5$POLVIEWS_TRUE_fac, df_5$pred_var_fac),
+    f1_macro(df_5$POLVIEWS_TRUE_fac, df_5$pred_narr_fac)
+  ),
+  Weighted_F1 = c(
+    f1_weighted(df_5$POLVIEWS_TRUE_fac, df_5$pred_var_fac),
+    f1_weighted(df_5$POLVIEWS_TRUE_fac, df_5$pred_narr_fac)
+  )
+)
+
+print(results)
+```
+
+```{r}
+mislabeled_comparison <- df_5 %>%
+  mutate(
+    # Wrong / right flags
+    var_wrong  = pred_var  != POLVIEWS_TRUE,
+    narr_wrong = pred_narr != POLVIEWS_TRUE,
+
+    # Case types with only two models
+    case_type = case_when(
+      var_wrong  & !narr_wrong ~ "Only Variable Model Wrong",
+      !var_wrong & narr_wrong  ~ "Only Narrative Model Wrong",
+      var_wrong  & narr_wrong  ~ "Both Wrong",
+      TRUE                     ~ "Both Correct"
+    ),
+
+    # Differences vs true (numeric scale 1–7)
+    diff_var  = as.numeric(pred_var)  - as.numeric(POLVIEWS_TRUE),
+    diff_narr = as.numeric(pred_narr) - as.numeric(POLVIEWS_TRUE),
+
+    # Bias direction for each model (only label as too lib/con if it's wrong)
+    bias_var = dplyr::case_when(
+      !var_wrong         ~ "Correct",
+      diff_var  > 0      ~ "Too Conservative",
+      diff_var  < 0      ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    ),
+    bias_narr = dplyr::case_when(
+      !narr_wrong        ~ "Correct",
+      diff_narr  > 0     ~ "Too Conservative",
+      diff_narr  < 0     ~ "Too Liberal",
+      TRUE               ~ NA_character_
+    )
+  ) %>%
+  select(
+    row_id, POLVIEWS_TRUE,
+    pred_var, pred_narr,
+    var_wrong, narr_wrong,
+    case_type,
+    bias_var, bias_narr
+  )
+
+# Save to CSV
+write.csv(mislabeled_comparison,
+          "mislabeled_cases_comparison_5.csv",
+          row.names = FALSE)
+
+bias_table <- mislabeled_comparison %>%
+  select(bias_var, bias_narr) %>%
+  tidyr::pivot_longer(
+    cols      = everything(),
+    names_to  = "model",
+    values_to = "bias"
+  ) %>%
+  dplyr::filter(bias != "Correct") %>%   # only mislabeled cases
+  dplyr::group_by(model, bias) %>%
+  dplyr::summarise(count = dplyr::n(), .groups = "drop_last") %>%
+  dplyr::mutate(
+    percent = count / sum(count) * 100
+  ) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(
+    model = dplyr::recode(
+      model,
+      bias_var  = "Variable Model",
+      bias_narr = "Narrative Model"
+    )
+  ) %>%
+  dplyr::arrange(model, bias)
+bias_table
+
+#true polviews distribution
+
+ggplot(df_5, aes(x = POLVIEWS_TRUE)) +
+  geom_bar() +
+  ggtitle("True POLVIEWS Distribution")
+
+ggplot(df_5, aes(x = pred_var)) +
+  geom_bar() +
+  ggtitle("Variable Model Pred Distribution")
+
+ggplot(df_5, aes(x = pred_narr)) +
+  geom_bar() +
+  ggtitle("Narrative Model Pred Distribution")
+```
+```{r}
+df_5$occ10 <- as.numeric(as.character(df_5$occ10))
+bias_by_predictor(df_5, age)
+bias_by_predictor(df_5, sex)
+bias_by_predictor(df_5, race)
+bias_by_predictor(df_5, educ)
+bias_by_predictor(df_5, marital)
+bias_by_predictor(df_5, occ10)
+bias_by_predictor(df_5, region)
+
+plot_mean_error_by_predictor(df_5, age)
+plot_mean_error_by_predictor(df_5, sex)
+plot_mean_error_by_predictor(df_5, race)
+plot_mean_error_by_predictor(df_5, educ)
+plot_mean_error_by_predictor(df_5, marital)
+plot_mean_error_by_predictor(df_5, occ10)
+plot_mean_error_by_predictor(df_5, region)
+```
+
